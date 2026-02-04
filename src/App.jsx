@@ -120,23 +120,58 @@ const App = () => {
   };
 
   const getGraphCoords = () => {
-    const padding = 25;
-    const size = 175;
-    const nOffset = (nachfrage - 50) * 0.7;
-    const nLine = { x1: padding, y1: padding - nOffset, x2: size, y2: size - nOffset };
-    const aOffset = (angebot - 50) * 0.7;
-    const aLine = { x1: padding, y1: size + aOffset, x2: size, y2: padding + aOffset };
-    const interX = (size + padding) / 2 + (nachfrage - angebot) * 0.5;
-    const interY = (size + padding) / 2 - (nachfrage + angebot - 100) * 0.25;
-    let pFixY = interY;
-    if (interventionMode === 'mindestpreis') pFixY = interY - 30; 
-    if (interventionMode === 'hoechstpreis') pFixY = interY + 30; 
-    const nXAtPFix = interX + (pFixY - interY); 
-    const aXAtPFix = interX - (pFixY - interY);
-    return { nLine, aLine, interX, interY, pFixY, nXAtPFix, aXAtPFix };
+  const padding = 25;
+  const size = 175;
+  const originX = padding; // Für die Achsen-Referenz
+  const originY = size;    // Für die Achsen-Referenz
+  const maxX = size;
+  const minY = padding;
+
+  // Skalierungsfaktor für die Verschiebung
+  const s = 0.7; 
+  
+  // Nachfrage (fällt: x steigt -> y steigt im SVG-Koordinatensystem)
+  const nOffset = (nachfrage - 50) * s;
+  const nLine = { 
+    x1: padding, 
+    y1: padding - nOffset, 
+    x2: size, 
+    y2: size - nOffset 
   };
 
-  const { nLine, aLine, interX, interY, pFixY, nXAtPFix, aXAtPFix } = getGraphCoords();
+  // Angebot (steigt: x steigt -> y sinkt im SVG-Koordinatensystem)
+  const aOffset = (angebot - 50) * s;
+  const aLine = { 
+    x1: padding, 
+    y1: size + aOffset, 
+    x2: size, 
+    y2: padding + aOffset 
+  };
+
+  /**
+   * Die exakte Schnittpunkt-Logik:
+   * interX: Die Mitte plus die Differenz der Verschiebungen (halbiert)
+   * interY: Die Mitte minus die Summe der Verschiebungen (halbiert)
+   */
+  const interX = (size + padding) / 2 + (nachfrage - angebot) * (s / 2);
+  const interY = (size + padding) / 2 - (nachfrage + angebot - 100) * (s / 2);
+
+  // Interventionen
+  let pFixY = interY;
+  if (interventionMode === 'mindestpreis') pFixY = interY - 30; 
+  if (interventionMode === 'hoechstpreis') pFixY = interY + 30; 
+
+  // Bei 45° Steigung ist die horizontale Abweichung (X) 
+  // identisch mit der vertikalen Abweichung (Y) vom Schnittpunkt
+  const dist = pFixY - interY;
+  const nXAtPFix = interX + dist; 
+  const aXAtPFix = interX - dist;
+
+  return { 
+    nLine, aLine, interX, interY, pFixY, nXAtPFix, aXAtPFix, 
+    originX, originY, maxX, minY 
+  };
+};
 
   return (
     <div className="min-h-screen bg-slate-50 p-3 md:p-8 font-sans text-slate-800 flex flex-col items-center">
